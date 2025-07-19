@@ -20,14 +20,15 @@ import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.ui.tooling.preview.Preview
-import com.ahmedadeltito.chatapp.presentation.chat.ChatMessageUiModel
+import com.ahmedadeltito.chatapp.presentation.chat.MessageUiModel
 import com.ahmedadeltito.chatapp.presentation.chat.MessageStatusUiModel.SENT_OR_PENDING
 import com.ahmedadeltito.chatapp.presentation.chat.MessageStatusUiModel.SENT_TO_SERVER
 import com.ahmedadeltito.chatapp.presentation.chat.MessageStatusUiModel.FAILED_TO_SEND
+import com.ahmedadeltito.chatapp.util.AppConstants
 import java.util.Date
 
 @Composable
-fun MessageBubble(message: ChatMessageUiModel, isMe: Boolean, onRetryClick: ((String) -> Unit)? = null) {
+fun MessageBubble(message: MessageUiModel, isMe: Boolean, onRetryClick: ((String) -> Unit)? = null) {
     val bubbleColor =
         if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
     val textColor =
@@ -100,15 +101,15 @@ fun MessageBubble(message: ChatMessageUiModel, isMe: Boolean, onRetryClick: ((St
 @Preview(name = "My Message - Sent", showBackground = true)
 @Composable
 private fun MessageBubbleMyMessageSentPreview() {
-    val message = ChatMessageUiModel(
+    val message = MessageUiModel(
         id = "1",
         text = "This is my message that was sent successfully!",
-        senderId = "myUserId",
+        senderId = AppConstants.CURRENT_USER_ID,
         timestamp = Date(System.currentTimeMillis() - 60000),
         isSentByMe = true,
         status = SENT_TO_SERVER
     )
-
+    
     MessageBubble(
         message = message,
         isMe = true,
@@ -119,15 +120,15 @@ private fun MessageBubbleMyMessageSentPreview() {
 @Preview(name = "Other User Message", showBackground = true)
 @Composable
 private fun MessageBubbleOtherUserPreview() {
-    val message = ChatMessageUiModel(
+    val message = MessageUiModel(
         id = "2",
         text = "This is a message from another user in the conversation.",
-        senderId = "otherUser",
+        senderId = AppConstants.OTHER_USER_ID,
         timestamp = Date(System.currentTimeMillis() - 30000),
         isSentByMe = false,
         status = SENT_TO_SERVER
     )
-
+    
     MessageBubble(
         message = message,
         isMe = false,
@@ -138,15 +139,15 @@ private fun MessageBubbleOtherUserPreview() {
 @Preview(name = "My Message - Pending", showBackground = true)
 @Composable
 private fun MessageBubbleMyMessagePendingPreview() {
-    val message = ChatMessageUiModel(
+    val message = MessageUiModel(
         id = "3",
         text = "This message is still pending and waiting to be sent.",
-        senderId = "myUserId",
+        senderId = AppConstants.CURRENT_USER_ID,
         timestamp = Date(System.currentTimeMillis()),
         isSentByMe = true,
         status = SENT_OR_PENDING
     )
-
+    
     MessageBubble(
         message = message,
         isMe = true,
@@ -157,15 +158,15 @@ private fun MessageBubbleMyMessagePendingPreview() {
 @Preview(name = "My Message - Failed", showBackground = true)
 @Composable
 private fun MessageBubbleMyMessageFailedPreview() {
-    val message = ChatMessageUiModel(
+    val message = MessageUiModel(
         id = "4",
         text = "This message failed to send and can be retried.",
-        senderId = "myUserId",
+        senderId = AppConstants.CURRENT_USER_ID,
         timestamp = Date(System.currentTimeMillis() - 5000),
         isSentByMe = true,
         status = FAILED_TO_SEND
     )
-
+    
     MessageBubble(
         message = message,
         isMe = true,
@@ -176,15 +177,15 @@ private fun MessageBubbleMyMessageFailedPreview() {
 @Preview(name = "Long Message", showBackground = true)
 @Composable
 private fun MessageBubbleLongMessagePreview() {
-    val message = ChatMessageUiModel(
+    val message = MessageUiModel(
         id = "5",
         text = "This is a very long message that demonstrates how the message bubble handles text that wraps to multiple lines. It should look good and maintain proper spacing and alignment.",
-        senderId = "myUserId",
+        senderId = AppConstants.CURRENT_USER_ID,
         timestamp = Date(System.currentTimeMillis() - 120000),
         isSentByMe = true,
         status = SENT_TO_SERVER
     )
-
+    
     MessageBubble(
         message = message,
         isMe = true,

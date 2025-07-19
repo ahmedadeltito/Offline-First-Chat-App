@@ -12,6 +12,7 @@ import com.ahmedadeltito.chatapp.domain.usecase.SendMessageUseCase
 import com.ahmedadeltito.chatapp.domain.usecase.SyncStatusUseCase
 import com.ahmedadeltito.chatapp.domain.usecase.ToggleSyncResult
 import com.ahmedadeltito.chatapp.domain.usecase.ToggleSyncUseCase
+import com.ahmedadeltito.chatapp.util.AppConstants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +39,7 @@ class ChatViewModel @Inject constructor(
 
     // --- Current User ID (Business Logic) ---
     // This could come from a UserManager or AuthService in a real app
-    private val currentUserId = "myUserId"
+    private val currentUserId = AppConstants.CURRENT_USER_ID
 
     // --- UI State ---
     private val _uiState = MutableStateFlow<ChatUiState>(
@@ -51,7 +52,7 @@ class ChatViewModel @Inject constructor(
         ChatUiStatus(
             currentInput = "",
             isSending = false,
-            syncStatus = "Idle",
+            syncStatus = AppConstants.DEFAULT_SYNC_STATUS,
             syncEnabled = true
         )
     )
@@ -75,9 +76,7 @@ class ChatViewModel @Inject constructor(
         initializeSyncSystem()
     }
 
-    /**
-     * Sets up message observation from the repository.
-     */
+    // Sets up message observation from the repository.
     private fun setupMessageObservation() {
         viewModelScope.launch {
             observeMessagesUseCase()
@@ -107,9 +106,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             syncStatusUseCase.observeSyncStatus()
                 .collectLatest { syncStatus ->
-                    _statusState.update { currentStatus ->
-                        currentStatus.copy(syncStatus = syncStatus)
-                    }
+                    _statusState.update { currentStatus -> currentStatus.copy(syncStatus = syncStatus) }
                 }
         }
     }
@@ -120,6 +117,7 @@ class ChatViewModel @Inject constructor(
     }
 
     // --- Event Handler (UDF Pattern) ---
+    
     fun onEvent(event: ChatUiEvent) {
         when (event) {
             is ChatUiEvent.InputChanged -> handleInputChanged(event.newInput)
@@ -140,10 +138,10 @@ class ChatViewModel @Inject constructor(
     private fun handleSendClicked() {
         val currentStatus = _statusState.value
         val messageText = currentStatus.currentInput.trim()
-
+        
         if (messageText.isBlank()) {
-            viewModelScope.launch {
-                _sideEffects.emit(ChatSideEffect.ShowSnackbar("Message cannot be empty"))
+            viewModelScope.launch { 
+                _sideEffects.emit(ChatSideEffect.ShowSnackbar(AppConstants.EMPTY_MESSAGE_ERROR)) 
             }
             return
         }
@@ -156,9 +154,9 @@ class ChatViewModel @Inject constructor(
                 senderId = currentUserId,
                 syncEnabled = currentStatus.syncEnabled
             )
-
+            
             _statusState.update { it.copy(isSending = false) }
-
+            
             when (result) {
                 is SendMessageResult.Success -> {
                     _sideEffects.emit(ChatSideEffect.ShowSnackbar(result.message))
@@ -172,13 +170,13 @@ class ChatViewModel @Inject constructor(
 
     private fun handleRetryMessageClicked(messageId: String) {
         val currentStatus = _statusState.value
-
+        
         viewModelScope.launch {
             val result = retryMessageUseCase(
                 messageId = messageId,
                 syncEnabled = currentStatus.syncEnabled
             )
-
+            
             when (result) {
                 is RetryMessageResult.Success -> {
                     _sideEffects.emit(ChatSideEffect.ShowSnackbar(result.message))
@@ -192,12 +190,12 @@ class ChatViewModel @Inject constructor(
 
     private fun handleSyncToggleClicked() {
         val currentStatus = _statusState.value
-
+        
         viewModelScope.launch {
             val result = toggleSyncUseCase(
                 currentSyncEnabled = currentStatus.syncEnabled
             )
-
+            
             when (result) {
                 is ToggleSyncResult.Success -> {
                     _statusState.update { it.copy(syncEnabled = result.newSyncEnabled) }
@@ -214,9 +212,9 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 refreshMessagesUseCase()
-                _sideEffects.emit(ChatSideEffect.ShowSnackbar("Messages refreshed successfully"))
+                _sideEffects.emit(ChatSideEffect.ShowSnackbar(AppConstants.REFRESH_SUCCESS_MESSAGE))
             } catch (e: Exception) {
-                _sideEffects.emit(ChatSideEffect.ShowSnackbar("Failed to refresh messages: ${e.message}"))
+                _sideEffects.emit(ChatSideEffect.ShowSnackbar("${AppConstants.REFRESH_ERROR_MESSAGE}: ${e.message}"))
             }
         }
     }

@@ -37,8 +37,16 @@ import com.ahmedadeltito.chatapp.ui.component.MessageBubble
 import com.ahmedadeltito.chatapp.ui.component.MessageInputBar
 import com.ahmedadeltito.chatapp.ui.component.SyncStatusCard
 import com.ahmedadeltito.chatapp.ui.component.TopAppBarTitle
+import com.ahmedadeltito.chatapp.util.AppConstants
 import java.util.Date
 
+/**
+ * ChatScreen is now a pure UI component that:
+ * 1. Receives UI state as a parameter
+ * 2. Receives event handlers as parameters
+ * 3. Has no direct dependency on ViewModel
+ * 4. Is easily testable and reusable
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
@@ -46,6 +54,7 @@ fun ChatScreen(
     statusState: ChatUiStatus,
     onEvent: (ChatUiEvent) -> Unit
 ) {
+    // --- Collect UI State ---
     val listState = rememberLazyListState() // For scrolling to bottom
 
     Scaffold(
@@ -53,8 +62,8 @@ fun ChatScreen(
             TopAppBar(
                 title = {
                     TopAppBarTitle(
-                        title = "Offline-First Chat",
-                        subtitle = "WorkManager Demo"
+                        title = AppConstants.APP_TITLE,
+                        subtitle = AppConstants.APP_SUBTITLE
                     )
                 },
                 actions = {
@@ -96,7 +105,7 @@ fun ChatScreen(
                     )
 
                     is ChatUiState.Success -> if (uiState.messages.isEmpty()) {
-                        Text("Start a conversation!")
+                        Text(AppConstants.EMPTY_CHAT_MESSAGE)
                     } else {
                         // --- Auto-scroll to bottom when new messages arrive ---
                         LaunchedEffect(uiState.messages.size) {
@@ -143,11 +152,11 @@ fun ChatScreen(
 @Composable
 private fun ChatScreenLoadingPreview() {
     ChatScreen(
-        uiState = ChatUiState.Loading(currentUserId = "myUserId"),
+        uiState = ChatUiState.Loading(currentUserId = AppConstants.CURRENT_USER_ID),
         statusState = ChatUiStatus(
             currentInput = "",
             isSending = false,
-            syncStatus = "Idle",
+            syncStatus = AppConstants.DEFAULT_SYNC_STATUS,
             syncEnabled = true
         ),
         onEvent = {}
@@ -159,13 +168,13 @@ private fun ChatScreenLoadingPreview() {
 private fun ChatScreenErrorPreview() {
     ChatScreen(
         uiState = ChatUiState.Error(
-            message = "Failed to load messages. Please check your connection.",
-            currentUserId = "myUserId"
+            message = AppConstants.NETWORK_ERROR_MESSAGE,
+            currentUserId = AppConstants.CURRENT_USER_ID
         ),
         statusState = ChatUiStatus(
             currentInput = "",
             isSending = false,
-            syncStatus = "Error",
+            syncStatus = AppConstants.SYNC_FAILED_STATUS,
             syncEnabled = false
         ),
         onEvent = {}
@@ -178,7 +187,7 @@ private fun ChatScreenEmptySuccessPreview() {
     ChatScreen(
         uiState = ChatUiState.Success(
             messages = emptyList(),
-            currentUserId = "myUserId"
+            currentUserId = AppConstants.CURRENT_USER_ID
         ),
         statusState = ChatUiStatus(
             currentInput = "Hello world!",
@@ -194,34 +203,34 @@ private fun ChatScreenEmptySuccessPreview() {
 @Composable
 private fun ChatScreenSuccessWithMessagesPreview() {
     val sampleMessages = listOf(
-        ChatMessageUiModel(
+        MessageUiModel(
             id = "1",
             text = "Hey there! How are you doing?",
-            senderId = "otherUser",
+            senderId = AppConstants.OTHER_USER_ID,
             timestamp = Date(System.currentTimeMillis() - 300000),
             isSentByMe = false,
             status = MessageStatusUiModel.SENT_TO_SERVER
         ),
-        ChatMessageUiModel(
+        MessageUiModel(
             id = "2",
             text = "I'm doing great! Just working on this offline-first chat app.",
-            senderId = "myUserId",
+            senderId = AppConstants.CURRENT_USER_ID,
             timestamp = Date(System.currentTimeMillis() - 240000),
             isSentByMe = true,
             status = MessageStatusUiModel.SENT_TO_SERVER
         ),
-        ChatMessageUiModel(
+        MessageUiModel(
             id = "3",
             text = "That sounds interesting! Tell me more about it.",
-            senderId = "otherUser",
+            senderId = AppConstants.OTHER_USER_ID,
             timestamp = Date(System.currentTimeMillis() - 180000),
             isSentByMe = false,
             status = MessageStatusUiModel.SENT_TO_SERVER
         ),
-        ChatMessageUiModel(
+        MessageUiModel(
             id = "4",
             text = "It uses WorkManager for background sync and Room for local storage. Pretty cool stuff!",
-            senderId = "myUserId",
+            senderId = AppConstants.CURRENT_USER_ID,
             timestamp = Date(System.currentTimeMillis() - 120000),
             isSentByMe = true,
             status = MessageStatusUiModel.SENT_OR_PENDING
@@ -231,12 +240,12 @@ private fun ChatScreenSuccessWithMessagesPreview() {
     ChatScreen(
         uiState = ChatUiState.Success(
             messages = sampleMessages,
-            currentUserId = "myUserId"
+            currentUserId = AppConstants.CURRENT_USER_ID
         ),
         statusState = ChatUiStatus(
             currentInput = "Thanks for asking!",
             isSending = true,
-            syncStatus = "Syncing...",
+            syncStatus = AppConstants.SYNCING_STATUS,
             syncEnabled = true
         ),
         onEvent = {}
