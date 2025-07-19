@@ -213,7 +213,7 @@ private fun ChatScreenSuccessWithMessagesPreview() {
         ),
         MessageUiModel(
             id = "2",
-            text = "I'm doing great! Just working on this offline-first chat app.",
+            text = "I'm doing great!",
             senderId = AppConstants.CURRENT_USER_ID,
             timestamp = Date(System.currentTimeMillis() - 240000),
             isSentByMe = true,
@@ -229,7 +229,7 @@ private fun ChatScreenSuccessWithMessagesPreview() {
         ),
         MessageUiModel(
             id = "4",
-            text = "It uses WorkManager for background sync and Room for local storage. Pretty cool stuff!",
+            text = "It uses WorkManager and Room for local storage.",
             senderId = AppConstants.CURRENT_USER_ID,
             timestamp = Date(System.currentTimeMillis() - 120000),
             isSentByMe = true,
