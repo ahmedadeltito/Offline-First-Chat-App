@@ -1,89 +1,75 @@
 package com.ahmedadeltito.chatapp.presentation.chat
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults.cardColors
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ahmedadeltito.chatapp.domain.Message
-import com.ahmedadeltito.chatapp.domain.MessageStatus
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.ahmedadeltito.chatapp.presentation.chat.ChatUiEvent.ClearInputClicked
+import com.ahmedadeltito.chatapp.presentation.chat.ChatUiEvent.InputChanged
+import com.ahmedadeltito.chatapp.presentation.chat.ChatUiEvent.RefreshClicked
+import com.ahmedadeltito.chatapp.presentation.chat.ChatUiEvent.RetryMessageClicked
+import com.ahmedadeltito.chatapp.presentation.chat.ChatUiEvent.SendClicked
+import com.ahmedadeltito.chatapp.presentation.chat.ChatUiEvent.SyncToggleClicked
+import com.ahmedadeltito.chatapp.ui.component.EducationalHeader
+import com.ahmedadeltito.chatapp.ui.component.GenericErrorScreen
+import com.ahmedadeltito.chatapp.ui.component.MessageBubble
+import com.ahmedadeltito.chatapp.ui.component.MessageInputBar
+import com.ahmedadeltito.chatapp.ui.component.SyncStatusCard
+import com.ahmedadeltito.chatapp.ui.component.TopAppBarTitle
+import java.util.Date
 
-/**
- * ChatScreen is now a pure UI component that:
- * 1. Receives UI state as a parameter
- * 2. Receives event handlers as parameters
- * 3. Has no direct dependency on ViewModel
- * 4. Is easily testable and reusable
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     uiState: ChatUiState,
-    onEvent: (ChatUiEvent) -> Unit,
-    snackbarHostState: SnackbarHostState
+    statusState: ChatUiStatus,
+    onEvent: (ChatUiEvent) -> Unit
 ) {
-    // --- Collect UI State ---
     val listState = rememberLazyListState() // For scrolling to bottom
 
-    // --- Auto-scroll to bottom when new messages arrive ---
-    LaunchedEffect(uiState.messages.size) {
-        if (uiState.messages.isNotEmpty()) {
-            listState.animateScrollToItem(uiState.messages.lastIndex)
-        }
-    }
-
-    Scaffold(topBar = {
-        TopAppBar(
-            title = {
-                Column {
-                    Text("Offline-First Chat")
-                    Text(
-                        "WorkManager Demo",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    TopAppBarTitle(
+                        title = "Offline-First Chat",
+                        subtitle = "WorkManager Demo"
+                    )
+                },
+                actions = {
+                    // Add refresh button
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .clickable { onEvent(RefreshClicked) }
                     )
                 }
-            }
-        )
-    }, snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
+            )
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -91,24 +77,31 @@ fun ChatScreen(
         ) {
             // --- Educational Header with Sync Toggle ---
             EducationalHeader(
-                syncEnabled = uiState.syncEnabled,
-                onSyncToggle = { onEvent(ChatUiEvent.SyncToggleClicked) })
+                syncEnabled = statusState.syncEnabled,
+                onSyncToggle = { onEvent(SyncToggleClicked) }
+            )
 
-            // --- Messages List ---
+            // --- Main Content Area ---
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentAlignment = Alignment.Center // For loading/empty state
+                contentAlignment = Alignment.Center
             ) {
-                when {
-                    uiState.isLoading -> CircularProgressIndicator()
-                    uiState.error != null -> Text(
-                        "Error: ${uiState.error}", color = MaterialTheme.colorScheme.error
+                when (uiState) {
+                    is ChatUiState.Loading -> CircularProgressIndicator()
+                    is ChatUiState.Error -> GenericErrorScreen(
+                        message = uiState.message,
+                        onRetryClick = { onEvent(RefreshClicked) }
                     )
 
-                    uiState.messages.isEmpty() -> Text("Start a conversation!")
-                    else -> {
+                    is ChatUiState.Success -> if (uiState.messages.isEmpty()) {
+                        Text("Start a conversation!")
+                    } else {
+                        // --- Auto-scroll to bottom when new messages arrive ---
+                        LaunchedEffect(uiState.messages.size) {
+                            listState.animateScrollToItem(uiState.messages.lastIndex)
+                        }
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
@@ -118,9 +111,9 @@ fun ChatScreen(
                             items(uiState.messages, key = { it.id }) { message ->
                                 MessageBubble(
                                     message = message,
-                                    isMe = message.senderId == uiState.currentUserId, // Use currentUserId from UI state
+                                    isMe = message.isSentByMe,
                                     onRetryClick = {
-                                        onEvent(ChatUiEvent.RetryMessageClicked(messageId = it))
+                                        onEvent(RetryMessageClicked(messageId = it))
                                     }
                                 )
                             }
@@ -130,193 +123,122 @@ fun ChatScreen(
             }
 
             // --- Enhanced Sync Status Indicator ---
-            SyncStatusCard(syncStatus = uiState.syncStatus)
+            SyncStatusCard(syncStatus = statusState.syncStatus)
 
             // --- Message Input Bar ---
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(8.dp), verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = uiState.currentInput,
-                    onValueChange = { onEvent(ChatUiEvent.InputChanged(newInput = it)) }, // UI sends event
-                    label = { Text("Type a message") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    enabled = !uiState.isSending // Disable input while sending
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = { onEvent(ChatUiEvent.SendClicked) }, // UI sends event
-                    enabled = uiState.currentInput.isNotBlank() && !uiState.isSending, // Enable only if input exists and not sending
-                    modifier = Modifier.height(56.dp) // Match TextField height
-                ) {
-                    if (uiState.isSending) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send Message")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EducationalHeader(
-    syncEnabled: Boolean, onSyncToggle: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        colors = cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.Info,
-                    contentDescription = "Info",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "How WorkManager Sync Works",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "1. Messages are saved locally first (offline-first)\n" + "2. WorkManager periodically syncs with server\n" + "3. Status indicators show sync progress\n" + "4. Toggle sync to batch messages",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Sync Toggle
-            Row(
-                verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Sync ${if (syncEnabled) "Enabled" else "Disabled"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = syncEnabled, onCheckedChange = { onSyncToggle() })
-            }
-        }
-    }
-}
-
-@Composable
-fun SyncStatusCard(syncStatus: String) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        colors = cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = when {
-                    syncStatus.contains("Syncing") -> "⏳"
-                    else -> "✓"
-                }, style = MaterialTheme.typography.bodyMedium, color = when {
-                    syncStatus.contains("Syncing") -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = syncStatus,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            MessageInputBar(
+                currentInput = statusState.currentInput,
+                isSending = statusState.isSending,
+                onInputChange = { onEvent(InputChanged(newInput = it)) },
+                onClearInputClick = { onEvent(ClearInputClicked) },
+                onSendClick = { onEvent(SendClicked) }
             )
         }
     }
 }
 
+// --- Preview Composables ---
+
+@Preview(name = "Loading State", showBackground = true)
 @Composable
-fun MessageBubble(message: Message, isMe: Boolean, onRetryClick: ((String) -> Unit)? = null) {
-    val bubbleColor =
-        if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-    val textColor =
-        if (isMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
-    val alignment = if (isMe) Alignment.End else Alignment.Start
+private fun ChatScreenLoadingPreview() {
+    ChatScreen(
+        uiState = ChatUiState.Loading(currentUserId = "myUserId"),
+        statusState = ChatUiStatus(
+            currentInput = "",
+            isSending = false,
+            syncStatus = "Idle",
+            syncEnabled = true
+        ),
+        onEvent = {}
+    )
+}
 
-    Column(
-        modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment
-    ) {
-        Card(
-            shape = RoundedCornerShape(8.dp), colors = cardColors(containerColor = bubbleColor)
-        ) {
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(
-                    text = message.text,
-                    color = textColor,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-                Text(
-                    text = "${message.senderId} - ${timeFormat.format(message.timestamp)}",
-                    color = textColor.copy(alpha = 0.7f),
-                    style = MaterialTheme.typography.bodySmall
-                )
-                if (isMe) {
-                    // Enhanced status indicator with educational context
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val statusText = when (message.status) {
-                            MessageStatus.SENT_OR_PENDING -> "⏳"
-                            MessageStatus.SENT_TO_SERVER -> "✓"
-                            MessageStatus.FAILED_TO_SEND -> "❌"
-                        }
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = textColor.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = when (message.status) {
-                                MessageStatus.SENT_OR_PENDING -> "Local (pending sync)"
-                                MessageStatus.SENT_TO_SERVER -> "Synced to server"
-                                MessageStatus.FAILED_TO_SEND -> "Failed to sync"
-                            },
-                            color = textColor.copy(alpha = 0.7f),
-                            style = MaterialTheme.typography.bodySmall
-                        )
+@Preview(name = "Error State", showBackground = true)
+@Composable
+private fun ChatScreenErrorPreview() {
+    ChatScreen(
+        uiState = ChatUiState.Error(
+            message = "Failed to load messages. Please check your connection.",
+            currentUserId = "myUserId"
+        ),
+        statusState = ChatUiStatus(
+            currentInput = "",
+            isSending = false,
+            syncStatus = "Error",
+            syncEnabled = false
+        ),
+        onEvent = {}
+    )
+}
 
-                        // Show retry button for failed messages
-                        if (message.status == MessageStatus.FAILED_TO_SEND && onRetryClick != null) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                modifier = Modifier.clickable { onRetryClick(message.id) },
-                                text = "Retry",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-} 
+@Preview(name = "Empty Success State", showBackground = true)
+@Composable
+private fun ChatScreenEmptySuccessPreview() {
+    ChatScreen(
+        uiState = ChatUiState.Success(
+            messages = emptyList(),
+            currentUserId = "myUserId"
+        ),
+        statusState = ChatUiStatus(
+            currentInput = "Hello world!",
+            isSending = false,
+            syncStatus = "Last synced: 2 min ago",
+            syncEnabled = true
+        ),
+        onEvent = {}
+    )
+}
+
+@Preview(name = "Success State with Messages", showBackground = true)
+@Composable
+private fun ChatScreenSuccessWithMessagesPreview() {
+    val sampleMessages = listOf(
+        ChatMessageUiModel(
+            id = "1",
+            text = "Hey there! How are you doing?",
+            senderId = "otherUser",
+            timestamp = Date(System.currentTimeMillis() - 300000),
+            isSentByMe = false,
+            status = MessageStatusUiModel.SENT_TO_SERVER
+        ),
+        ChatMessageUiModel(
+            id = "2",
+            text = "I'm doing great! Just working on this offline-first chat app.",
+            senderId = "myUserId",
+            timestamp = Date(System.currentTimeMillis() - 240000),
+            isSentByMe = true,
+            status = MessageStatusUiModel.SENT_TO_SERVER
+        ),
+        ChatMessageUiModel(
+            id = "3",
+            text = "That sounds interesting! Tell me more about it.",
+            senderId = "otherUser",
+            timestamp = Date(System.currentTimeMillis() - 180000),
+            isSentByMe = false,
+            status = MessageStatusUiModel.SENT_TO_SERVER
+        ),
+        ChatMessageUiModel(
+            id = "4",
+            text = "It uses WorkManager for background sync and Room for local storage. Pretty cool stuff!",
+            senderId = "myUserId",
+            timestamp = Date(System.currentTimeMillis() - 120000),
+            isSentByMe = true,
+            status = MessageStatusUiModel.SENT_OR_PENDING
+        )
+    )
+
+    ChatScreen(
+        uiState = ChatUiState.Success(
+            messages = sampleMessages,
+            currentUserId = "myUserId"
+        ),
+        statusState = ChatUiStatus(
+            currentInput = "Thanks for asking!",
+            isSending = true,
+            syncStatus = "Syncing...",
+            syncEnabled = true
+        ),
+        onEvent = {}
+    )
+}
