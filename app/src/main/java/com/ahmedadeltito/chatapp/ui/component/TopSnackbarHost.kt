@@ -19,7 +19,7 @@ fun TopSnackbarHost(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier,
+        modifier = modifier.padding(top = 100.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         SnackbarHost(
@@ -27,4 +27,4 @@ fun TopSnackbarHost(
             modifier = Modifier.padding(16.dp)
         )
     }
-} 
+}
