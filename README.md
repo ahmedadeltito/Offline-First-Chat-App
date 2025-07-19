@@ -362,8 +362,7 @@ The `SyncManager` is the central coordinator for all sync operations:
 
 ```kotlin
 class SyncManager @Inject constructor(
-    private val workManager: WorkManager,
-    private val chatRepository: ChatRepository
+    private val workManager: WorkManager
 ) {
     // Manages sync state and coordinates sync operations
     fun observeSyncStatus(): Flow<String>
@@ -375,7 +374,6 @@ class SyncManager @Inject constructor(
 
 **Responsibilities:**
 - Manages sync state (enabled/disabled)
-- Coordinates between WorkManager and Repository
 - Provides sync status updates to UI
 - Handles sync enable/disable operations
 

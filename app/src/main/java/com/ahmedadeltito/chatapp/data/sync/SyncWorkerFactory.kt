@@ -18,8 +18,8 @@ class SyncWorkerFactory : WorkerFactory() {
     ): ListenableWorker? = when (workerClassName) {
         SyncWorker::class.java.name -> {
             val entryPoint = EntryPointAccessors.fromApplication(
-                appContext,
-                SyncWorkerEntryPoint::class.java
+                context = appContext,
+                entryPoint = SyncWorkerEntryPoint::class.java
             )
             SyncWorker(
                 appContext = appContext,

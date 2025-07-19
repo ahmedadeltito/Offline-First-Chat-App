@@ -50,12 +50,10 @@ class ChatRepositoryImpl(
 
     override suspend fun fetchAndSyncRemoteMessages() {
         try {
-            val remoteMessages = chatApiService.fetchMessages()
-            val messageEntities = remoteMessages.map { messageDto ->
-                messageDto.toEntityModel(currentUserId = currentUserId)
-            }
-            messageDao.insertMessages(messageEntities)
-            println("Repository: Fetched and synced ${remoteMessages.size} remote messages.")
+            val remoteMessages = chatApiService.fetchMessage()
+            val messageEntity = remoteMessages.toEntityModel(currentUserId = currentUserId)
+            messageDao.insertMessage(messageEntity)
+            println("Repository: Fetched and synced $remoteMessages remote messages.")
         } catch (e: Exception) {
             println("Repository: Failed to fetch remote messages: ${e.message}")
         }
