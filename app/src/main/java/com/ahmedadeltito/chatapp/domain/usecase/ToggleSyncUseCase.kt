@@ -2,20 +2,11 @@ package com.ahmedadeltito.chatapp.domain.usecase
 
 import com.ahmedadeltito.chatapp.data.sync.SyncManager
 
-/**
- * Use case for toggling sync functionality.
- * Encapsulates the business logic for enabling/disabling sync operations.
- */
+// Use case for toggling sync functionality.
 class ToggleSyncUseCase(
     private val syncManager: SyncManager
 ) {
-
-    /**
-     * Toggles sync on/off and handles the appropriate actions.
-     * @param currentSyncEnabled The current sync state
-     * @return Result indicating the new state and appropriate message
-     */
-    fun execute(
+    operator fun invoke(
         currentSyncEnabled: Boolean
     ): ToggleSyncResult = try {
         val newSyncEnabled = !currentSyncEnabled

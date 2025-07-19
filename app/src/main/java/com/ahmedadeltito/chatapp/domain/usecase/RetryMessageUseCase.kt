@@ -4,25 +4,12 @@ import com.ahmedadeltito.chatapp.data.sync.SyncManager
 import com.ahmedadeltito.chatapp.domain.ChatRepository
 import com.ahmedadeltito.chatapp.domain.MessageStatus
 
-/**
- * Use case for retrying failed messages.
- * Encapsulates the business logic for retrying message sending.
- */
+// Use case for retrying failed messages.
 class RetryMessageUseCase(
     private val chatRepository: ChatRepository,
     private val syncManager: SyncManager
 ) {
-
-    /**
-     * Retries sending a failed message.
-     * @param messageId The ID of the message to retry
-     * @param syncEnabled Whether to trigger immediate sync after retry
-     * @return Result indicating success or failure with appropriate message
-     */
-    suspend fun execute(
-        messageId: String,
-        syncEnabled: Boolean
-    ): RetryMessageResult = try {
+    suspend operator fun invoke(messageId: String, syncEnabled: Boolean): RetryMessageResult = try {
         // Update the message status back to pending so it will be retried
         chatRepository.updateMessageStatus(
             messageId = messageId,

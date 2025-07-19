@@ -2,6 +2,9 @@ package com.ahmedadeltito.chatapp.di
 
 import com.ahmedadeltito.chatapp.data.sync.SyncManager
 import com.ahmedadeltito.chatapp.domain.ChatRepository
+import com.ahmedadeltito.chatapp.domain.usecase.InitializeSyncUseCase
+import com.ahmedadeltito.chatapp.domain.usecase.ObserveMessagesUseCase
+import com.ahmedadeltito.chatapp.domain.usecase.RefreshMessagesUseCase
 import com.ahmedadeltito.chatapp.domain.usecase.RetryMessageUseCase
 import com.ahmedadeltito.chatapp.domain.usecase.SendMessageUseCase
 import com.ahmedadeltito.chatapp.domain.usecase.SyncStatusUseCase
@@ -21,42 +24,48 @@ object UseCaseModule {
     fun provideSendMessageUseCase(
         chatRepository: ChatRepository,
         syncManager: SyncManager
-    ): SendMessageUseCase {
-        return SendMessageUseCase(
-            chatRepository = chatRepository,
-            syncManager = syncManager
-        )
-    }
+    ): SendMessageUseCase = SendMessageUseCase(
+        chatRepository = chatRepository,
+        syncManager = syncManager
+    )
 
     @Provides
     @Singleton
     fun provideRetryMessageUseCase(
         chatRepository: ChatRepository,
         syncManager: SyncManager
-    ): RetryMessageUseCase {
-        return RetryMessageUseCase(
-            chatRepository = chatRepository,
-            syncManager = syncManager
-        )
-    }
+    ): RetryMessageUseCase = RetryMessageUseCase(
+        chatRepository = chatRepository,
+        syncManager = syncManager
+    )
 
     @Provides
     @Singleton
     fun provideToggleSyncUseCase(
         syncManager: SyncManager
-    ): ToggleSyncUseCase {
-        return ToggleSyncUseCase(
-            syncManager = syncManager
-        )
-    }
-    
+    ): ToggleSyncUseCase = ToggleSyncUseCase(syncManager = syncManager)
+
     @Provides
     @Singleton
     fun provideSyncStatusUseCase(
         syncManager: SyncManager
-    ): SyncStatusUseCase {
-        return SyncStatusUseCase(
-            syncManager = syncManager
-        )
-    }
+    ): SyncStatusUseCase = SyncStatusUseCase(syncManager = syncManager)
+
+    @Provides
+    @Singleton
+    fun provideInitializeSyncUseCase(
+        syncManager: SyncManager
+    ): InitializeSyncUseCase = InitializeSyncUseCase(syncManager = syncManager)
+
+    @Provides
+    @Singleton
+    fun provideObserveMessagesUseCase(
+        chatRepository: ChatRepository
+    ): ObserveMessagesUseCase = ObserveMessagesUseCase(chatRepository = chatRepository)
+
+    @Provides
+    @Singleton
+    fun provideRefreshMessagesUseCase(
+        chatRepository: ChatRepository
+    ): RefreshMessagesUseCase = RefreshMessagesUseCase(chatRepository = chatRepository)
 } 

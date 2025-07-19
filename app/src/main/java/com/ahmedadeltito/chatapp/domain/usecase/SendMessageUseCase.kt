@@ -6,23 +6,12 @@ import com.ahmedadeltito.chatapp.domain.Message
 import com.ahmedadeltito.chatapp.domain.MessageStatus
 import java.util.Date
 
-/**
- * Use case for sending messages with sync management.
- * Encapsulates the business logic for sending messages and handling sync operations.
- */
+// Use case for sending messages with sync management.
 class SendMessageUseCase(
     private val chatRepository: ChatRepository,
     private val syncManager: SyncManager
 ) {
-
-    /**
-     * Sends a message with optional sync triggering.
-     * @param text The message text to send
-     * @param senderId The ID of the sender
-     * @param syncEnabled Whether to trigger immediate sync after sending
-     * @return Result indicating success or failure with appropriate message
-     */
-    suspend fun execute(
+    suspend operator fun invoke(
         text: String,
         senderId: String,
         syncEnabled: Boolean
