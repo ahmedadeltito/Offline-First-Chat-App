@@ -1,12 +1,8 @@
 # Offline-First Chat App - Architecture Documentation
 
-## Overview
+## 📋 Table of Contents
 
-This document provides a comprehensive overview of the architecture for the Offline-First Chat App, a demonstration of modern Android development practices using Clean Architecture, Jetpack Compose, WorkManager, and Room.
-
-## Table of Contents
-
-1. [Architecture Overview](#architecture-overview)
+1. [Overview](#overview)
 2. [Project Structure](#project-structure)
 3. [Clean Architecture Layers](#clean-architecture-layers)
 4. [Key Technologies](#key-technologies)
@@ -14,47 +10,34 @@ This document provides a comprehensive overview of the architecture for the Offl
 6. [Component Details](#component-details)
 7. [Design Patterns](#design-patterns)
 8. [Sync System Deep Dive](#sync-system-deep-dive)
-9. [Testing Strategy](#testing-strategy)
-10. [Future Enhancements](#future-enhancements)
+9. [Conflict Resolution System](#conflict-resolution-system)
+10. [Testing Strategy](#testing-strategy)
+11. [Performance Considerations](#performance-considerations)
+12. [Security Considerations](#security-considerations)
 
-## Architecture Overview
+---
 
-The app follows **Clean Architecture** principles with a clear separation of concerns across multiple layers:
+## 🎯 Overview
 
-```
-┌───────────────────────────────────────────────────────────┐
-│                    Presentation Layer                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │   ChatRoute │  │ ChatScreen  │  │   UI Components  │   │
-│  └─────────────┘  └─────────────┘  └──────────────────┘   │
-└───────────────────────────────────────────────────────────┘
-┌───────────────────────────────────────────────────────────┐
-│                     Domain Layer                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │   Use Cases │  │  Repository │  │   Domain Models  │   │
-│  └─────────────┘  └─────────────┘  └──────────────────┘   │
-└───────────────────────────────────────────────────────────┘
-┌───────────────────────────────────────────────────────────┐
-│                      Data Layer                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │   Local DB  │  │ Remote API  │  │   Sync Manager   │   │
-│  └─────────────┘  └─────────────┘  └──────────────────┘   │
-└───────────────────────────────────────────────────────────┘
-```
+The Offline-First Chat App is built using **Clean Architecture** principles with a focus on **offline-first functionality**, **real-time sync**, and **conflict resolution**. The app demonstrates modern Android development practices using Jetpack Compose, Room, WorkManager, and Hilt.
 
-### Key Architectural Principles
+### Core Principles
 
-1. **Dependency Inversion**: High-level modules don't depend on low-level modules
-2. **Single Responsibility**: Each class has one reason to change
-3. **Open/Closed Principle**: Open for extension, closed for modification
-4. **Unidirectional Data Flow**: State flows in one direction through the app
+- **Offline-First**: Messages are stored locally first, then synced when online
+- **Real-Time Updates**: UI updates immediately with local changes
+- **Conflict Resolution**: Robust handling of sync conflicts
+- **Clean Architecture**: Clear separation of concerns
+- **Unidirectional Data Flow**: Predictable state management
+- **Dependency Injection**: Proper dependency management with Hilt
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
 app/src/main/java/com/ahmedadeltito/chatapp/
 ├── data/                           # Data Layer
-│   ├── local/                      # Local database (Room)
+│   ├── local/                      # Local Database (Room)
 │   │   ├── AppDatabase.kt
 │   │   ├── MessageDao.kt
 │   │   ├── MessageEntity.kt
@@ -62,31 +45,34 @@ app/src/main/java/com/ahmedadeltito/chatapp/
 │   │   └── MessageStatusConverter.kt
 │   ├── remote/                     # Remote API
 │   │   ├── ChatApiService.kt
+│   │   ├── ChatApiServiceImpl.kt
 │   │   └── MessageDto.kt
-│   ├── sync/                       # Background sync
+│   ├── sync/                       # Sync System
 │   │   ├── SyncManager.kt
-│   │   └── SyncWorker.kt
-│   └── ChatRepositoryImpl.kt       # Repository implementation
+│   │   ├── SyncManagerImpl.kt
+│   │   ├── SyncWorker.kt
+│   │   └── SyncWorkerFactory.kt
+│   └── ChatRepositoryImpl.kt       # Repository Implementation
 ├── domain/                         # Domain Layer
-│   ├── Message.kt                  # Domain model
-│   ├── ChatRepository.kt           # Repository interface
-│   └── usecase/                    # Use cases
+│   ├── Message.kt                  # Domain Model
+│   ├── ChatRepository.kt           # Repository Interface
+│   └── usecase/                    # Use Cases
+│       ├── ObserveMessagesUseCase.kt
+│       ├── RefreshMessagesUseCase.kt
 │       ├── SendMessageUseCase.kt
 │       ├── RetryMessageUseCase.kt
 │       ├── ToggleSyncUseCase.kt
 │       ├── SyncStatusUseCase.kt
-│       ├── ObserveMessagesUseCase.kt
-│       ├── RefreshMessagesUseCase.kt
 │       └── InitializeSyncUseCase.kt
 ├── presentation/                    # Presentation Layer
 │   └── chat/
-│       ├── ChatScreenContract.kt   # UDF contract
-│       ├── ChatUiModels.kt         # UI models with @Stable
+│       ├── ChatScreen.kt           # UI Component
 │       ├── ChatViewModel.kt        # ViewModel
-│       ├── ChatScreen.kt           # UI component
-│       └── ChatRoute.kt            # Route/Container
+│       ├── ChatScreenContract.kt   # UI Contracts
+│       ├── MessageUiModel.kt       # UI Models
+│       └── ChatRoute.kt            # Navigation
 ├── ui/                             # UI Components
-│   ├── component/                  # Reusable components
+│   ├── component/                   # Reusable Components
 │   │   ├── MessageBubble.kt
 │   │   ├── MessageInputBar.kt
 │   │   ├── SyncStatusCard.kt
@@ -95,35 +81,153 @@ app/src/main/java/com/ahmedadeltito/chatapp/
 │   │   ├── DisabledMessageInputBar.kt
 │   │   ├── TopAppBarTitle.kt
 │   │   └── TopSnackbarHost.kt
-│   └── theme/                      # UI theming
-└── di/                             # Dependency Injection
-    ├── DatabaseModule.kt
-    ├── NetworkModule.kt
-    ├── RepositoryModule.kt
-    ├── UseCaseModule.kt
-    └── AppModule.kt
+│   └── theme/                      # UI Theme
+│       ├── Color.kt
+│       ├── Theme.kt
+│       └── Type.kt
+├── di/                             # Dependency Injection
+│   ├── InfrastructureModule.kt
+│   ├── NetworkModule.kt
+│   ├── RepositoryModule.kt
+│   ├── UseCaseModule.kt
+│   └── SyncWorkerEntryPoint.kt
+├── util/                           # Utilities
+│   └── AppConstants.kt             # App-wide Constants
+└── MainActivity.kt                 # Main Activity
 ```
 
-## Clean Architecture Layers
+---
 
-### 1. Presentation Layer
+## 🏗️ Clean Architecture Layers
 
-The presentation layer is responsible for displaying data to the user and handling user interactions.
+### 1. **Domain Layer** (Core Business Logic)
+- **Entities**: `Message` (domain model)
+- **Repository Interfaces**: `ChatRepository`
+- **Use Cases**: All business logic operations
+- **No Dependencies**: Pure Kotlin, no Android dependencies
 
-#### Key Components:
+### 2. **Data Layer** (Data Management)
+- **Repository Implementations**: `ChatRepositoryImpl`
+- **Local Data Sources**: Room database with `MessageDao`
+- **Remote Data Sources**: API service with `ChatApiService`
+- **Data Models**: `MessageEntity`, `MessageDto`
 
-- **ChatRoute**: Container component that manages ViewModel creation and side effect handling
-- **ChatScreen**: Pure UI component focused on rendering state
-- **ChatViewModel**: Manages UI state and business logic
-- **ChatScreenContract**: Defines the Unidirectional Data Flow contract
-- **ChatUiModels**: UI-specific models with @Stable annotations for Compose optimization
+### 3. **Presentation Layer** (UI Logic)
+- **ViewModels**: `ChatViewModel`
+- **UI Models**: `MessageUiModel`, `ChatUiState`
+- **UI Components**: Compose functions
+- **Contracts**: UI state, events, side effects
 
-#### UDF Pattern Implementation:
+---
 
+## 🔧 Key Technologies
+
+| Technology | Purpose | Version |
+|------------|---------|---------|
+| **Jetpack Compose** | Modern UI toolkit | Latest |
+| **Room Database** | Local data persistence | 2.6.0 |
+| **WorkManager** | Background sync operations | 2.9.0 |
+| **Hilt** | Dependency injection | 2.48 |
+| **Kotlin Coroutines** | Asynchronous programming | 1.7.3 |
+| **Kotlin Flow** | Reactive streams | 1.7.3 |
+| **Retrofit** | HTTP client for API calls | 2.9.0 |
+| **Material 3** | Design system | Latest |
+
+---
+
+## 🔄 Data Flow
+
+### 1. **Message Sending Flow**
+```
+User Input → ChatViewModel → SendMessageUseCase → ChatRepository → Local DB → Sync Queue → WorkManager → Remote API
+```
+
+### 2. **Message Receiving Flow**
+```
+Remote API → WorkManager → ChatRepository → Local DB → ObserveMessagesUseCase → ChatViewModel → UI Update
+```
+
+### 3. **Sync Flow**
+```
+WorkManager → SyncWorker → Conflict Resolution → Local DB Update → UI Notification
+```
+
+---
+
+## 🧩 Component Details
+
+### **Domain Layer Components**
+
+#### `Message` (Domain Model)
+```kotlin
+data class Message(
+    val id: String,
+    val text: String,
+    val senderId: String,
+    val timestamp: Date,
+    val isSentByMe: Boolean,
+    val status: MessageStatus
+)
+```
+
+#### `ChatRepository` (Repository Interface)
+```kotlin
+interface ChatRepository {
+    suspend fun sendMessage(message: Message)
+    fun getMessages(): Flow<List<Message>>
+    suspend fun fetchAndSyncRemoteMessages()
+    suspend fun getPendingOutgoingMessages(): List<Message>
+    suspend fun updateMessageStatus(messageId: String, newStatus: MessageStatus)
+    suspend fun sendMessageToRemote(message: Message): Boolean
+    suspend fun getAllMessages(): List<Message>
+    suspend fun fetchRemoteMessages(): List<Message>
+    suspend fun updateMessagesWithResolvedData(resolvedMessages: List<Message>)
+}
+```
+
+### **Data Layer Components**
+
+#### `MessageEntity` (Database Entity)
+```kotlin
+@Entity(tableName = "messages")
+data class MessageEntity(
+    @PrimaryKey val id: String,
+    val text: String,
+    val senderId: String,
+    @TypeConverters(DateConverter::class)
+    val timestamp: Date,
+    val isSentByMe: Boolean,
+    @TypeConverters(MessageStatusConverter::class)
+    val status: MessageStatus
+)
+```
+
+#### `ChatRepositoryImpl` (Repository Implementation)
+- Handles data operations between local and remote sources
+- Implements conflict resolution integration
+- Manages sync state and error handling
+
+### **Presentation Layer Components**
+
+#### `ChatViewModel` (ViewModel)
+```kotlin
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    private val observeMessagesUseCase: ObserveMessagesUseCase,
+    private val refreshMessagesUseCase: RefreshMessagesUseCase,
+    private val sendMessageUseCase: SendMessageUseCase,
+    private val retryMessageUseCase: RetryMessageUseCase,
+    private val toggleSyncUseCase: ToggleSyncUseCase,
+    private val syncStatusUseCase: SyncStatusUseCase,
+    private val initializeSyncUseCase: InitializeSyncUseCase
+) : ViewModel()
+```
+
+#### `ChatScreenContract` (UI Contracts)
 ```kotlin
 sealed interface ChatUiState {
     data class Loading(val currentUserId: String) : ChatUiState
-    data class Success(val messages: List<ChatMessageUiModel>, val currentUserId: String) : ChatUiState
+    data class Success(val messages: List<MessageUiModel>, val currentUserId: String) : ChatUiState
     data class Error(val message: String, val currentUserId: String) : ChatUiState
 }
 
@@ -145,538 +249,379 @@ sealed interface ChatSideEffect {
 }
 ```
 
-### 2. Domain Layer
+---
 
-The domain layer contains the business logic and is independent of external frameworks.
+## 🎨 Design Patterns
 
-#### Key Components:
+### 1. **Clean Architecture Pattern**
+- **Separation of Concerns**: Each layer has a specific responsibility
+- **Dependency Inversion**: High-level modules don't depend on low-level modules
+- **Single Responsibility**: Each class has one reason to change
 
-- **Message**: Domain model representing a chat message
-- **ChatRepository**: Interface defining data operations
-- **Use Cases**: Encapsulate business logic and orchestrate data operations
+### 2. **Repository Pattern**
+- **Abstraction**: UI doesn't know about data sources
+- **Flexibility**: Easy to switch between local and remote data
+- **Testability**: Easy to mock for testing
 
-#### Use Cases:
+### 3. **Observer Pattern**
+- **Reactive UI**: UI observes data changes
+- **Real-time Updates**: Immediate UI updates with local changes
+- **Flow-based**: Kotlin Flow for reactive streams
 
-1. **SendMessageUseCase**: Handles message sending with sync status
-2. **RetryMessageUseCase**: Retries failed message sending
-3. **ToggleSyncUseCase**: Manages sync enable/disable
-4. **SyncStatusUseCase**: Observes and manages sync status
-5. **ObserveMessagesUseCase**: Observes message updates
-6. **RefreshMessagesUseCase**: Refreshes messages from remote
-7. **InitializeSyncUseCase**: Initializes the sync system
+### 4. **Factory Pattern**
+- **Worker Creation**: `SyncWorkerFactory` creates workers with dependencies
+- **Dependency Injection**: Hilt manages object creation
 
-### 3. Data Layer
+### 5. **Strategy Pattern**
+- **Conflict Resolution**: Different strategies for different conflict types
+- **Sync Strategies**: Various sync approaches based on conditions
 
-The data layer handles data operations and external dependencies.
+---
 
-#### Local Storage (Room):
+## 🔄 Sync System Deep Dive
 
+### **Architecture Overview**
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   UI Layer      │    │  WorkManager    │    │  Remote API     │
+│                 │    │                 │    │                 │
+│ ChatViewModel   │◄──►│   SyncWorker    │◄──►│ ChatApiService  │
+│                 │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Local Storage  │    │  Sync Manager   │    │  Conflict Res.  │
+│                 │    │                 │    │                 │
+│   Room DB       │◄──►│ SyncManagerImpl │◄──►│ Conflict Logic  │
+│                 │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### **Sync Components**
+
+#### 1. **SyncManager** (Interface)
 ```kotlin
-@Entity(tableName = "messages")
-data class MessageEntity(
-    @PrimaryKey val id: String,
-    val senderId: String,
-    val text: String,
-    val timestamp: Date,
-    val status: MessageStatus
-)
-```
-
-#### Remote API:
-
-```kotlin
-interface ChatApiService {
-    @GET("messages")
-    suspend fun getMessages(): List<MessageDto>
-    
-    @POST("messages")
-    suspend fun sendMessage(@Body message: MessageDto): MessageDto
-}
-```
-
-#### Sync Management:
-
-- **SyncManager**: Coordinates background sync operations
-- **SyncWorker**: WorkManager worker for background sync
-- **WorkManager**: Handles periodic sync tasks
-
-## Key Technologies
-
-### Core Technologies
-
-1. **Jetpack Compose**: Modern declarative UI toolkit
-2. **Room**: Local database for offline storage
-3. **WorkManager**: Background task scheduling
-4. **Hilt**: Dependency injection
-5. **Kotlin Coroutines**: Asynchronous programming
-6. **StateFlow**: Reactive state management
-
-### Architecture Patterns
-
-1. **Clean Architecture**: Separation of concerns
-2. **MVVM**: Model-View-ViewModel pattern
-3. **Repository Pattern**: Data access abstraction
-4. **Use Case Pattern**: Business logic encapsulation
-5. **Unidirectional Data Flow**: Predictable state management
-
-## Data Flow
-
-### Message Sending Flow
-
-```
-User Input → ChatScreen → ChatViewModel → SendMessageUseCase → ChatRepository → 
-Local DB (immediate) → Remote API (background) → SyncManager → WorkManager
-```
-
-### Message Receiving Flow
-
-```
-Remote API → ChatRepository → Local DB → ObserveMessagesUseCase → 
-ChatViewModel → ChatScreen → UI Update
-```
-
-### Sync Flow
-
-```
-WorkManager → SyncWorker → SyncManager → ChatRepository → 
-Local DB ↔ Remote API → UI State Update
-```
-
-## Component Details
-
-### ChatViewModel
-
-The ViewModel manages UI state and coordinates between use cases:
-
-```kotlin
-@HiltViewModel
-class ChatViewModel @Inject constructor(
-    private val observeMessagesUseCase: ObserveMessagesUseCase,
-    private val sendMessageUseCase: SendMessageUseCase,
-    // ... other use cases
-) : ViewModel() {
-    
-    private val _uiState = MutableStateFlow<ChatUiState>(ChatUiState.Loading())
-    private val _statusState = MutableStateFlow<ChatUiStatus>(ChatUiStatus())
-    
-    fun onEvent(event: ChatUiEvent) {
-        when (event) {
-            is ChatUiEvent.SendClicked -> handleSendClicked()
-            // ... other event handlers
-        }
-    }
-}
-```
-
-### Use Cases
-
-Use cases encapsulate business logic and are easily testable:
-
-```kotlin
-class SendMessageUseCase @Inject constructor(
-    private val chatRepository: ChatRepository,
-    private val syncManager: SyncManager
-) {
-    operator fun invoke(
-        text: String,
-        senderId: String,
-        syncEnabled: Boolean
-    ): SendMessageResult {
-        // Business logic implementation
-    }
-}
-```
-
-### Repository Pattern
-
-The repository provides a clean abstraction over data sources:
-
-```kotlin
-interface ChatRepository {
-    fun getMessages(): Flow<List<Message>>
-    suspend fun sendMessage(text: String, senderId: String): Result<Message>
-    suspend fun fetchAndSyncRemoteMessages()
-}
-```
-
-## Design Patterns
-
-### 1. Repository Pattern
-
-Provides a clean abstraction over data sources, allowing the domain layer to be independent of data implementation details.
-
-### 2. Use Case Pattern
-
-Encapsulates business logic in single-purpose classes, making the code more testable and maintainable.
-
-### 3. Unidirectional Data Flow
-
-State flows in one direction: UI Events → ViewModel → Use Cases → Repository → State Updates → UI.
-
-### 4. Dependency Injection
-
-Uses Hilt for dependency injection, making components loosely coupled and easily testable.
-
-### 5. Observer Pattern
-
-Uses StateFlow to observe state changes and update the UI reactively.
-
-## Sync System Deep Dive
-
-The sync system is the heart of the offline-first architecture, ensuring data consistency between local storage and remote servers while providing a seamless user experience.
-
-### Architecture Overview
-
-```
-┌────────────────────────────────────────────────────────────┐
-│                          UI Layer                          │
-│  ┌─────────────┐  ┌───────────────┐  ┌──────────────────┐  │
-│  │ ChatScreen  │  │ ChatViewModel │  │  SyncStatusCard  │  │
-│  └─────────────┘  └───────────────┘  └──────────────────┘  │
-└────────────────────────────────────────────────────────────┘
-┌────────────────────────────────────────────────────────────┐
-│                       Business Logic                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │ SyncStatusUC │  │ ToggleSyncUC │  │ InitializeSyncUC │  │
-│  └──────────────┘  └──────────────┘  └──────────────────┘  │
-└────────────────────────────────────────────────────────────┘
-┌───────────────────────────────────────────────────────────┐
-│                       Sync Layer                          │
-│  ┌──────────────┐  ┌─────────────┐  ┌──────────────────┐  │
-│  │ SyncManager  │  │ SyncWorker  │  │   WorkManager    │  │
-│  └──────────────┘  └─────────────┘  └──────────────────┘  │
-└───────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────┐
-│                         Data Layer                          │
-│  ┌───────────┐  ┌─────────────┐  ┌──────────────────┐       │
-│  │  Room DB  │  │ Remote API  │  │   Repository     │       │
-│  └───────────┘  └─────────────┘  └──────────────────┘       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Sync Components
-
-#### 1. SyncManager
-
-The `SyncManager` is the central coordinator for all sync operations:
-
-```kotlin
-class SyncManager @Inject constructor(
-    private val workManager: WorkManager
-) {
-    // Manages sync state and coordinates sync operations
+interface SyncManager {
+    fun triggerImmediateSync()
+    fun schedulePeriodicSync()
+    fun cancelOngoingSync()
+    fun cancelPeriodicSync()
     fun observeSyncStatus(): Flow<String>
-    fun initializeSync()
-    fun toggleSync(enabled: Boolean)
-    fun triggerSync()
+    suspend fun resolveMessageConflicts(
+        localMessages: List<Message>,
+        remoteMessages: List<Message>
+    ): List<Message>
 }
 ```
 
-**Responsibilities:**
-- Manages sync state (enabled/disabled)
-- Provides sync status updates to UI
-- Handles sync enable/disable operations
+#### 2. **SyncManagerImpl** (Implementation)
+- **WorkManager Integration**: Manages background sync operations
+- **Constraint Management**: Network, battery, and timing constraints
+- **Status Observation**: Real-time sync status updates
+- **Conflict Resolution**: Comprehensive conflict handling
 
-#### 2. SyncWorker
-
-The `SyncWorker` is a WorkManager worker that performs background sync:
-
+#### 3. **SyncWorker** (Background Worker)
 ```kotlin
 class SyncWorker(
-    context: Context,
-    params: WorkerParameters
-) : CoroutineWorker(context, params) {
-    
-    override suspend fun doWork(): Result {
-        return try {
-            // 1. Fetch remote messages
-            // 2. Merge with local messages
-            // 3. Update local database
-            // 4. Handle conflicts
-            Result.success()
-        } catch (e: Exception) {
-            Result.retry()
-        }
+    appContext: Context,
+    workerParams: WorkerParameters,
+    private val chatRepository: ChatRepository,
+    private val syncManager: SyncManager
+) : CoroutineWorker(appContext, workerParams)
+```
+
+**Responsibilities:**
+- **Outgoing Sync**: Push local changes to remote
+- **Incoming Sync**: Pull remote changes to local
+- **Conflict Resolution**: Handle sync conflicts
+- **Error Handling**: Retry logic and error recovery
+
+### **Sync Flow Diagram**
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Trigger   │───►│  Immediate  │───►│  Outgoing   │
+│   Sync      │    │    Sync     │    │    Sync     │
+└─────────────┘    └─────────────┘    └─────────────┘
+                           │                   │
+                           ▼                   ▼
+                   ┌─────────────┐    ┌─────────────┐
+                   │  Periodic   │    │  Fetch      │
+                   │    Sync     │    │   Remote    │
+                   └─────────────┘    └─────────────┘
+                           │                   │
+                           ▼                   ▼
+                   ┌─────────────┐    ┌─────────────┐
+                   │  Conflict   │    │  Update     │
+                   │ Resolution  │    │   Local     │
+                   └─────────────┘    └─────────────┘
+                           │                   │
+                           ▼                   ▼
+                   ┌─────────────┐    ┌──────────────┐
+                   │  Status     │    │  UI Update   │
+                   │  Update     │    │  Notification│
+                   └─────────────┘    └──────────────┘
+```
+
+---
+
+## ⚔️ Conflict Resolution System
+
+### **Overview**
+
+The conflict resolution system is a **critical component** that ensures data consistency between local and remote systems. It handles various scenarios where the same message might exist in different states across systems.
+
+### **Conflict Scenarios**
+
+#### 1. **Message Exists Only Locally**
+```
+Local:  [Message A]  Remote: []
+Result: Keep local message, sync to remote
+```
+
+#### 2. **Message Exists Only Remotely**
+```
+Local:  []  Remote: [Message B]
+Result: Add remote message to local
+```
+
+#### 3. **Message Exists in Both Places - Identical Content**
+```
+Local:  [Message C]  Remote: [Message C]
+Result: Use version with better status (SENT_TO_SERVER > SENT_OR_PENDING)
+```
+
+#### 4. **Message Exists in Both Places - Different Timestamps**
+```
+Local:  [Message D @ 10:00]  Remote: [Message D @ 10:05]
+Result: Use newer timestamp (Remote version)
+```
+
+#### 5. **Message Exists in Both Places - Same Timestamp, Different Content**
+```
+Local:  [Message E]  Remote: [Message E']
+Result: Prefer remote version (server authority)
+```
+
+### **Conflict Resolution Strategies**
+
+#### **Strategy 1: Content-Based Resolution**
+```kotlin
+// If content is identical, use status-based selection
+if (localMessage.text == remoteMessage.text) {
+    when {
+        remoteMessage.status == MessageStatus.SENT_TO_SERVER -> remoteMessage
+        localMessage.status == MessageStatus.SENT_TO_SERVER -> localMessage
+        else -> if (remoteMessage.timestamp > localMessage.timestamp) remoteMessage else localMessage
     }
 }
 ```
 
-**Responsibilities:**
-- Executes sync operations in background
-- Handles network failures gracefully
-- Implements retry logic
-- Reports sync status
-
-#### 3. WorkManager
-
-WorkManager handles the scheduling and execution of background sync tasks:
-
+#### **Strategy 2: Timestamp-Based Resolution**
 ```kotlin
-// Periodic sync every 15 minutes
-val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-    repeatInterval = 15,
-    repeatIntervalTimeUnit = TimeUnit.MINUTES
-).setConstraints(
-    Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
-).build()
-```
-
-### Sync Flow Diagrams
-
-#### 1. Initial Sync Setup
-
-```
-App Launch
-    ↓
-InitializeSyncUseCase
-    ↓
-SyncManager.initializeSync()
-    ↓
-WorkManager.enqueuePeriodicWork()
-    ↓
-Sync Status: "Idle"
-```
-
-#### 2. Message Sending with Sync
-
-```
-User Sends Message
-    ↓
-SendMessageUseCase
-    ↓
-Repository.saveMessage() [Local DB - Immediate]
-    ↓
-UI: Message appears instantly
-    ↓
-if (syncEnabled) {
-    SyncManager.triggerSync()
-    ↓
-    WorkManager.enqueueOneTimeWork()
-    ↓
-    SyncWorker.doWork()
-    ↓
-    Repository.sendToRemote()
-    ↓
-    Update Message Status: SENT_TO_SERVER
+// If timestamps differ, use the more recent one
+if (localMessage.timestamp != remoteMessage.timestamp) {
+    if (remoteMessage.timestamp > localMessage.timestamp) {
+        remoteMessage // Newer timestamp
+    } else {
+        localMessage // Newer timestamp
+    }
 }
 ```
 
-#### 3. Background Sync Process
-
-```
-WorkManager Triggers Periodic Sync
-    ↓
-SyncWorker.doWork()
-    ↓
-Repository.fetchAndSyncRemoteMessages()
-    ↓
-┌──────────────────────────────────────┐
-│           Sync Process               │
-│  ┌──────────────┐   ┌─────────────┐  │
-│  │ Fetch Remote │   │ Merge Local │  │
-│  │   Messages   │   │   & Remote  │  │
-│  └──────────────┘   └─────────────┘  │
-│  ┌──────────────┐   ┌─────────────┐  │
-│  │ Handle       │   │ Update      │  │
-│  │ Conflicts    │   │ Local DB    │  │
-│  └──────────────┘   └─────────────┘  │
-└──────────────────────────────────────┘
-    ↓
-Update Sync Status
-    ↓
-UI Updates via StateFlow
-```
-
-#### 4. Sync State Management
-
-```
-┌────────────────────────────────────┐
-│             Sync States            │
-│  ┌─────────────┐  ┌─────────────┐  │
-│  │   IDLE      │  │  SYNCING    │  │
-│  │             │  │             │  │
-│  │ "Last synced│  │ "Syncing..."│  │
-│  │  X min ago" │  │             │  │
-│  └─────────────┘  └─────────────┘  │
-│                                    │
-│  ┌─────────────┐  ┌─────────────┐  │
-│  │   ERROR     │  │  DISABLED   │  │
-│  │             │  │             │  │
-│  │ "Sync failed│  │ "Sync off"  │  │
-│  │  - retry"   │  │             │  │
-│  └─────────────┘  └─────────────┘  │
-└────────────────────────────────────┘
-```
-
-### Conflict Resolution Strategy
-
-The app implements a **"Last Write Wins"** strategy with timestamp-based conflict resolution:
-
+#### **Strategy 3: Server Authority**
 ```kotlin
-fun resolveMessageConflicts(
+// Same timestamp, different content - prefer server
+else -> remoteMessage // Server authority
+```
+
+### **Implementation Details**
+
+#### **SyncManagerImpl.resolveMessageConflicts()**
+```kotlin
+override suspend fun resolveMessageConflicts(
     localMessages: List<Message>,
     remoteMessages: List<Message>
 ): List<Message> {
-    return (localMessages + remoteMessages)
-        .groupBy { it.id }
-        .mapValues { (_, messages) ->
-            messages.maxByOrNull { it.timestamp }
+    val resolvedMessages = mutableListOf<Message>()
+    val localMessageMap = localMessages.associateBy { it.id }
+    val remoteMessageMap = remoteMessages.associateBy { it.id }
+    
+    val allMessageIds = (localMessages.map { it.id } + remoteMessages.map { it.id }).distinct()
+    
+    for (messageId in allMessageIds) {
+        val localMessage = localMessageMap[messageId]
+        val remoteMessage = remoteMessageMap[messageId]
+        
+        when {
+            localMessage != null && remoteMessage == null -> {
+                resolvedMessages.add(localMessage) // Local-only
+            }
+            localMessage == null && remoteMessage != null -> {
+                resolvedMessages.add(remoteMessage) // Remote-only
+            }
+            localMessage != null && remoteMessage != null -> {
+                val resolvedMessage = resolveSingleMessageConflict(localMessage, remoteMessage)
+                resolvedMessages.add(resolvedMessage) // Conflict resolved
+            }
         }
-        .values
-        .filterNotNull()
-        .sortedBy { it.timestamp }
+    }
+    
+    return resolvedMessages.sortedBy { it.timestamp } // Chronological order
 }
 ```
 
-**Conflict Resolution Rules:**
-1. **Timestamp-based**: Newer messages take precedence
-2. **Status preservation**: Failed messages are preserved for retry
-3. **Merge strategy**: Combine local and remote messages
-4. **Deduplication**: Remove duplicate messages by ID
-
-### Network Handling
-
-#### Online Scenario
-```
-Network Available
-    ↓
-Sync Enabled
-    ↓
-Immediate local save + Background remote sync
-    ↓
-Real-time status updates
-    ↓
-Seamless user experience
-```
-
-#### Offline Scenario
-```
-Network Unavailable
-    ↓
-Sync Disabled or Pending
-    ↓
-Local-only operations
-    ↓
-Queue for later sync
-    ↓
-Graceful degradation
-```
-
-#### Network Recovery
-```
-Network Restored
-    ↓
-WorkManager detects connectivity
-    ↓
-Triggers pending sync operations
-    ↓
-Resolves queued messages
-    ↓
-Updates UI status
-```
-
-### Performance Optimizations
-
-#### 1. Incremental Sync
-- Only sync messages newer than last sync timestamp
-- Reduces network usage and processing time
-
-#### 2. Batch Operations
-- Group multiple messages for single API call
-- Reduces network overhead
-
-#### 3. Smart Retry Logic
-- Exponential backoff for failed syncs
-- Prevents overwhelming the server
-
-#### 4. Background Processing
-- Sync operations don't block UI
-- User can continue using the app
-
-### Error Handling
-
-#### Sync Failures
+#### **SyncWorker Integration**
 ```kotlin
-when (syncResult) {
-    is Success -> updateStatus("Last synced: ${formatTime()}")
-    is NetworkError -> updateStatus("Network error - will retry")
-    is ServerError -> updateStatus("Server error - will retry")
-    is UnknownError -> updateStatus("Sync failed - will retry")
+private suspend fun performIncomingSyncWithConflictResolution() {
+    val localMessages = chatRepository.getAllMessages()
+    val remoteMessages = chatRepository.fetchRemoteMessages()
+    val resolvedMessages = syncManager.resolveMessageConflicts(localMessages, remoteMessages)
+    chatRepository.updateMessagesWithResolvedData(resolvedMessages)
 }
 ```
 
-#### User Feedback
-- Clear status messages in UI
-- Retry options for failed operations
-- Visual indicators for sync state
-- Educational messages about offline-first approach
+### **Conflict Resolution Flow Diagram**
 
-### Testing Sync System
-
-#### Unit Tests
-```kotlin
-@Test
-fun `sync merges local and remote messages correctly`() {
-    // Test conflict resolution
-}
-
-@Test
-fun `sync handles network failures gracefully`() {
-    // Test error scenarios
-}
-
-@Test
-fun `sync respects enable/disable state`() {
-    // Test sync toggle
-}
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Local     │    │   Remote    │    │  Conflict   │
+│  Messages   │    │  Messages   │    │  Detection  │
+└─────────────┘    └─────────────┘    └─────────────┘
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           │
+                           ▼
+                   ┌─────────────┐
+                   │  Conflict   │
+                   │ Resolution  │
+                   └─────────────┘
+                           │
+                           ▼
+                   ┌─────────────┐
+                   │  Strategy   │
+                   │ Selection   │
+                   └─────────────┘
+                           │
+                           ▼
+                   ┌─────────────┐
+                   │  Resolved   │
+                   │  Messages   │
+                   └─────────────┘
+                           │
+                           ▼
+                   ┌─────────────┐
+                   │  Update     │
+                   │  Local DB   │
+                   └─────────────┘
 ```
 
-#### Integration Tests
-```kotlin
-@Test
-fun `complete sync flow works end-to-end`() {
-    // Test full sync cycle
-}
-```
+### **Benefits of Conflict Resolution**
 
-## Testing Strategy
+✅ **Data Consistency**: Ensures consistent state across systems  
+✅ **No Data Loss**: Handles all conflict scenarios safely  
+✅ **Performance**: Efficient algorithms with O(n) complexity  
+✅ **Reliability**: Fallback mechanisms for error handling  
+✅ **Observability**: Detailed logging for debugging  
+✅ **Extensibility**: Easy to add new conflict strategies
 
-### Unit Testing
+---
 
+## 🧪 Testing Strategy
+
+### **Unit Testing**
 - **Use Cases**: Test business logic in isolation
-- **ViewModels**: Test state management and event handling
-- **Repositories**: Test data operations
-- **Sync Components**: Test sync logic and error handling
+- **Repository**: Mock data sources for testing
+- **ViewModels**: Test UI logic and state management
+- **Conflict Resolution**: Test all conflict scenarios
 
-### UI Testing
+### **Integration Testing**
+- **Database Operations**: Test Room database operations
+- **Sync Operations**: Test WorkManager integration
+- **API Integration**: Test remote API interactions
 
-- **Compose Preview**: Visual testing of UI components
-- **Integration Tests**: Test complete user flows
+### **UI Testing**
+- **Compose Testing**: Test UI components and interactions
+- **Navigation Testing**: Test app navigation flows
+- **Accessibility Testing**: Ensure app accessibility
 
-### Architecture Testing
+### **Performance Testing**
+- **Database Performance**: Test with large datasets
+- **Sync Performance**: Test sync with many messages
+- **Memory Usage**: Monitor memory consumption
 
-- **Dependency Rule**: Ensure layers follow Clean Architecture rules
-- **Testability**: All components are easily testable
+---
 
-## Future Enhancements
+## ⚡ Performance Considerations
 
-### Planned Features
+### **Database Optimization**
+- **Indexing**: Proper indexes on frequently queried columns
+- **Batch Operations**: Use batch inserts for multiple messages
+- **Query Optimization**: Efficient queries with minimal data transfer
 
-1. **Message Encryption**: End-to-end encryption
-2. **Message Search**: Local and remote search
-3. **Message Reactions**: Like, heart, etc.
+### **Sync Optimization**
+- **Incremental Sync**: Only sync changed data
+- **Background Processing**: Use WorkManager for background sync
+- **Network Efficiency**: Minimize network requests and data transfer
 
-### Technical Improvements
+### **UI Performance**
+- **Lazy Loading**: Load messages on demand
+- **Recomposition Optimization**: Use `@Stable` and `@Immutable` annotations
+- **Memory Management**: Proper cleanup of resources
 
-1. **Navigation**: Navigation Compose integration
-2. **Caching**: Advanced caching strategies
+---
 
-## Conclusion
+## 🔒 Security Considerations
 
-This architecture provides a solid foundation for a scalable, maintainable, and testable chat application. The separation of concerns, use of modern Android technologies, and adherence to Clean Architecture principles make it easy to extend and modify as requirements evolve.
+### **Data Security**
+- **Local Encryption**: Encrypt sensitive data in local storage
+- **Network Security**: Use HTTPS for all API communications
+- **Input Validation**: Validate all user inputs
 
-The offline-first approach ensures a great user experience even with poor network connectivity, while the reactive programming model provides a responsive and fluid interface.
+### **Authentication & Authorization**
+- **User Authentication**: Implement proper user authentication
+- **API Security**: Secure API endpoints with proper authentication
+- **Data Privacy**: Ensure user data privacy compliance
 
-The sync system is particularly robust, handling various network conditions gracefully while maintaining data consistency and providing clear user feedback about sync status. 
+### **Code Security**
+- **Dependency Security**: Regular security updates for dependencies
+- **Code Review**: Regular security code reviews
+- **Vulnerability Scanning**: Regular vulnerability assessments
+
+---
+
+## 🚀 Future Enhancements
+
+### **Planned Features**
+- **Real-time Messaging**: WebSocket integration for real-time updates
+- **File Sharing**: Support for image, video, and document sharing
+- **Message Reactions**: Emoji reactions and message responses
+- **Group Chats**: Multi-user chat functionality
+- **Push Notifications**: Real-time push notifications
+- **Message Encryption**: End-to-end encryption for messages
+
+### **Architecture Improvements**
+- **Microservices**: Split into microservices for scalability
+- **Caching Strategy**: Implement sophisticated caching
+- **Analytics**: Add analytics and monitoring
+- **A/B Testing**: Support for feature flags and A/B testing
+
+---
+
+## 📚 Conclusion
+
+This architecture provides a **solid foundation** for an offline-first chat application with:
+
+- ✅ **Clean Architecture** principles
+- ✅ **Robust sync system** with conflict resolution
+- ✅ **Modern Android development** practices
+- ✅ **Scalable and maintainable** codebase
+- ✅ **Production-ready** implementation
+- ✅ **Comprehensive testing** strategy
+- ✅ **Performance optimization** considerations
+- ✅ **Security best practices**
+
+The app demonstrates **best practices** for building modern Android applications with offline-first capabilities, real-time sync, and robust conflict resolution. 
