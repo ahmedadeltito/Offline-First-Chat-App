@@ -14,7 +14,5 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideChatApiService(): ChatApiService {
-        return ChatApiServiceImpl()
-    }
+    fun provideChatApiService(): ChatApiService = ChatApiServiceImpl()
 } 

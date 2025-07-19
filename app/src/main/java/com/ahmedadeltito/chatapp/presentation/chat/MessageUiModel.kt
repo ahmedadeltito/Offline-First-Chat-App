@@ -6,7 +6,7 @@ import com.ahmedadeltito.chatapp.domain.MessageStatus
 import java.util.Date
 
 @Stable
-data class ChatMessageUiModel(
+data class MessageUiModel(
     val id: String,
     val text: String,
     val senderId: String,
@@ -22,7 +22,7 @@ enum class MessageStatusUiModel {
     FAILED_TO_SEND
 }
 
-fun Message.toUiModel(): ChatMessageUiModel = ChatMessageUiModel(
+fun Message.toUiModel(): MessageUiModel = MessageUiModel(
     id = id,
     text = text,
     senderId = senderId,

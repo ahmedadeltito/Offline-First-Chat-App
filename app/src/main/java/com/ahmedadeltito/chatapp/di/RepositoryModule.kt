@@ -4,6 +4,7 @@ import com.ahmedadeltito.chatapp.data.ChatRepositoryImpl
 import com.ahmedadeltito.chatapp.data.local.AppDatabase
 import com.ahmedadeltito.chatapp.data.remote.ChatApiService
 import com.ahmedadeltito.chatapp.domain.ChatRepository
+import com.ahmedadeltito.chatapp.util.AppConstants
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,6 +23,6 @@ object RepositoryModule {
     ): ChatRepository = ChatRepositoryImpl(
         database = database,
         chatApiService = chatApiService,
-        currentUserId = "myUserId"
+        currentUserId = AppConstants.CURRENT_USER_ID
     )
 } 

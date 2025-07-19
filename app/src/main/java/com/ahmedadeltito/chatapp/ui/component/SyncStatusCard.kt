@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.ahmedadeltito.chatapp.util.AppConstants
 
 @Composable
 fun SyncStatusCard(syncStatus: String) {
@@ -51,13 +52,13 @@ fun SyncStatusCard(syncStatus: String) {
 @Preview(name = "Idle State", showBackground = true)
 @Composable
 private fun SyncStatusCardIdlePreview() {
-    SyncStatusCard(syncStatus = "Idle")
+    SyncStatusCard(syncStatus = AppConstants.DEFAULT_SYNC_STATUS)
 }
 
 @Preview(name = "Syncing", showBackground = true)
 @Composable
 private fun SyncStatusCardSyncingPreview() {
-    SyncStatusCard(syncStatus = "Syncing...")
+    SyncStatusCard(syncStatus = AppConstants.SYNCING_STATUS)
 }
 
 @Preview(name = "Last Synced", showBackground = true)
@@ -69,7 +70,7 @@ private fun SyncStatusCardLastSyncedPreview() {
 @Preview(name = "Error State", showBackground = true)
 @Composable
 private fun SyncStatusCardErrorPreview() {
-    SyncStatusCard(syncStatus = "Sync failed")
+    SyncStatusCard(syncStatus = AppConstants.SYNC_FAILED_STATUS)
 }
 
 @Preview(name = "Long Status", showBackground = true)

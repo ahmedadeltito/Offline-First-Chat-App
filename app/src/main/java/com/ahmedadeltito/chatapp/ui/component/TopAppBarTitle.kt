@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.ahmedadeltito.chatapp.util.AppConstants
 
 @Composable
 fun TopAppBarTitle(title: String, subtitle: String) {
@@ -24,8 +25,8 @@ fun TopAppBarTitle(title: String, subtitle: String) {
 @Composable
 private fun TopAppBarTitleDefaultPreview() {
     TopAppBarTitle(
-        title = "Offline-First Chat",
-        subtitle = "WorkManager Demo"
+        title = AppConstants.APP_TITLE,
+        subtitle = AppConstants.APP_SUBTITLE
     )
 }
 

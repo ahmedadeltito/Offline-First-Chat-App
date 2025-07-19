@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.ahmedadeltito.chatapp.util.AppConstants
 
 @Composable
 fun GenericErrorScreen(
@@ -42,7 +43,7 @@ fun GenericErrorScreen(
 @Composable
 private fun GenericErrorScreenNetworkErrorPreview() {
     GenericErrorScreen(
-        message = "Network connection failed. Please check your internet connection and try again.",
+        message = AppConstants.NETWORK_ERROR_MESSAGE,
         onRetryClick = {}
     )
 }
@@ -51,7 +52,7 @@ private fun GenericErrorScreenNetworkErrorPreview() {
 @Composable
 private fun GenericErrorScreenServerErrorPreview() {
     GenericErrorScreen(
-        message = "Server is temporarily unavailable. Please try again later.",
+        message = AppConstants.SERVER_ERROR_MESSAGE,
         onRetryClick = {}
     )
 }
@@ -60,7 +61,7 @@ private fun GenericErrorScreenServerErrorPreview() {
 @Composable
 private fun GenericErrorScreenShortErrorPreview() {
     GenericErrorScreen(
-        message = "Something went wrong.",
+        message = AppConstants.GENERAL_ERROR_MESSAGE,
         onRetryClick = {}
     )
 }

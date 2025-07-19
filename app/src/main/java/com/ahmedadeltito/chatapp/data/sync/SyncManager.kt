@@ -1,4 +1,17 @@
 package com.ahmedadeltito.chatapp.data.sync
 
-class SyncManager {
+import kotlinx.coroutines.flow.Flow
+
+// Interface for sync management operations.
+interface SyncManager {
+    fun triggerImmediateSync()
+    fun schedulePeriodicSync()
+    fun cancelOngoingSync()
+    fun cancelPeriodicSync()
+    fun observeSyncStatus(): Flow<String>
+
+    companion object {
+        const val IMMEDIATE_SYNC_WORK_NAME = "immediate_sync_work"
+        const val SYNC_WORK_NAME = "chat_sync_work"
+    }
 }

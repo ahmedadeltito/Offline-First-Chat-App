@@ -1,4 +1,7 @@
 package com.ahmedadeltito.chatapp.data.remote
 
-class ChatApiService1 {
+// Interface for chat API operations.
+interface ChatApiService {
+    suspend fun sendMessage(message: MessageDto): Boolean
+    suspend fun fetchMessages(): List<MessageDto>
 }

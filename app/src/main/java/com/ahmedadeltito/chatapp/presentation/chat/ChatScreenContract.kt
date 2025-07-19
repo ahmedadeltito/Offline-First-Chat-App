@@ -4,7 +4,7 @@ package com.ahmedadeltito.chatapp.presentation.chat
 sealed interface ChatUiState {
     data class Loading(val currentUserId: String) : ChatUiState
     data class Success(
-        val messages: List<ChatMessageUiModel>,
+        val messages: List<MessageUiModel>,
         val currentUserId: String
     ) : ChatUiState
     data class Error(

@@ -6,12 +6,8 @@ import com.ahmedadeltito.chatapp.domain.MessageStatus
 // Type converter for Room to store and retrieve MessageStatus enum
 class MessageStatusConverter {
     @TypeConverter
-    fun fromMessageStatus(value: MessageStatus): String {
-        return value.name
-    }
+    fun fromMessageStatus(value: MessageStatus): String = value.name
 
     @TypeConverter
-    fun toMessageStatus(value: String): MessageStatus {
-        return MessageStatus.valueOf(value)
-    }
+    fun toMessageStatus(value: String): MessageStatus = MessageStatus.valueOf(value)
 } 

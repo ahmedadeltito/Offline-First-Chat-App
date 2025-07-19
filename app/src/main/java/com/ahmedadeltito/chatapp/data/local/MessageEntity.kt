@@ -28,13 +28,11 @@ fun MessageEntity.toDomainModel(): Message = Message(
 )
 
 // Helper function to convert Domain Model to Entity
-fun Message.toEntity(): MessageEntity {
-    return MessageEntity(
-        id = id,
-        senderId = senderId,
-        text = text,
-        timestamp = timestamp,
-        isSentByMe = isSentByMe,
-        status = status
-    )
-} 
+fun Message.toEntityModel(): MessageEntity = MessageEntity(
+    id = id,
+    senderId = senderId,
+    text = text,
+    timestamp = timestamp,
+    isSentByMe = isSentByMe,
+    status = status
+)
