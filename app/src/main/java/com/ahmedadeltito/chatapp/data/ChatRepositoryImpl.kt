@@ -4,6 +4,7 @@ import com.ahmedadeltito.chatapp.data.local.AppDatabase
 import com.ahmedadeltito.chatapp.data.local.toDomainModel
 import com.ahmedadeltito.chatapp.data.local.toEntityModel
 import com.ahmedadeltito.chatapp.data.remote.ChatApiService
+import com.ahmedadeltito.chatapp.data.remote.toDomainModel
 import com.ahmedadeltito.chatapp.data.remote.toDtoModel
 import com.ahmedadeltito.chatapp.data.remote.toEntityModel
 import com.ahmedadeltito.chatapp.domain.ChatRepository
@@ -56,6 +57,33 @@ class ChatRepositoryImpl(
             println("Repository: Fetched and synced $remoteMessages remote messages.")
         } catch (e: Exception) {
             println("Repository: Failed to fetch remote messages: ${e.message}")
+        }
+    }
+    
+    override suspend fun getAllMessages(): List<Message> =
+        messageDao.getAllMessages().map { entity -> entity.toDomainModel() }
+    
+    override suspend fun fetchRemoteMessages(): List<Message> = try {
+            val remoteMessageDto = chatApiService.fetchMessage()
+            listOf(remoteMessageDto.toDomainModel(currentUserId = currentUserId))
+        } catch (e: Exception) {
+            println("Repository: Failed to fetch remote messages for conflict resolution: ${e.message}")
+            emptyList()
+        }
+    
+    override suspend fun updateMessagesWithResolvedData(resolvedMessages: List<Message>) {
+        try {
+            // Clear existing messages and insert resolved ones
+            messageDao.deleteAllMessages()
+            
+            // Insert resolved messages
+            resolvedMessages.forEach { message ->
+                messageDao.insertMessage(message.toEntityModel())
+            }
+            
+            println("Repository: Updated local database with ${resolvedMessages.size} resolved messages")
+        } catch (e: Exception) {
+            println("Repository: Failed to update messages with resolved data: ${e.message}")
         }
     }
 } 

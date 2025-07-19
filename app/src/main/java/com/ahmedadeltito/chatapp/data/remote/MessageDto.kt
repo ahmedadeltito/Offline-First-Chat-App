@@ -22,6 +22,15 @@ fun MessageDto.toEntityModel(currentUserId: String): MessageEntity = MessageEnti
     status = MessageStatus.SENT_TO_SERVER
 )
 
+fun MessageDto.toDomainModel(currentUserId: String): Message = Message(
+    id = id,
+    senderId = senderId,
+    text = text,
+    timestamp = Date(timestamp),
+    isSentByMe = senderId == currentUserId,
+    status = MessageStatus.SENT_TO_SERVER
+)
+
 fun Message.toDtoModel(): MessageDto = MessageDto(
     id = id,
     senderId = senderId,

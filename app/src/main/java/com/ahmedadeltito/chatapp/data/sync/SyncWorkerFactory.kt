@@ -24,7 +24,8 @@ class SyncWorkerFactory : WorkerFactory() {
             SyncWorker(
                 appContext = appContext,
                 workerParams = workerParameters,
-                chatRepository = entryPoint.chatRepository()
+                chatRepository = entryPoint.chatRepository(),
+                syncManager = entryPoint.syncManager()
             )
         }
         else -> null // Let the default factory handle other workers

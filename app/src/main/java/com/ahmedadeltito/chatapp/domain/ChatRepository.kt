@@ -44,4 +44,25 @@ interface ChatRepository {
      * @return true if the message was successfully sent, false otherwise.
      */
     suspend fun sendMessageToRemote(message: Message): Boolean
+    
+    /**
+     * Gets all messages from the local database.
+     * Used for conflict resolution to compare with remote messages.
+     * @return A list of all local messages.
+     */
+    suspend fun getAllMessages(): List<Message>
+    
+    /**
+     * Fetches messages from the remote server without updating local database.
+     * Used for conflict resolution to compare with local messages.
+     * @return A list of messages from the remote server.
+     */
+    suspend fun fetchRemoteMessages(): List<Message>
+    
+    /**
+     * Updates the local database with resolved messages from conflict resolution.
+     * This method replaces the existing messages with the resolved set.
+     * @param resolvedMessages The list of messages after conflict resolution.
+     */
+    suspend fun updateMessagesWithResolvedData(resolvedMessages: List<Message>)
 } 

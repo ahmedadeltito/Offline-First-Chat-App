@@ -1,5 +1,6 @@
 package com.ahmedadeltito.chatapp.di
 
+import com.ahmedadeltito.chatapp.data.sync.SyncManager
 import com.ahmedadeltito.chatapp.domain.ChatRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -12,4 +13,5 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 interface SyncWorkerEntryPoint {
     fun chatRepository(): ChatRepository
+    fun syncManager(): SyncManager
 }
