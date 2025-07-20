@@ -1,6 +1,6 @@
 package com.ahmedadeltito.chatapp.di
 
-import com.ahmedadeltito.chatapp.data.sync.SyncManager
+import com.ahmedadeltito.chatapp.sync.SyncManager
 import com.ahmedadeltito.chatapp.domain.ChatRepository
 import com.ahmedadeltito.chatapp.domain.usecase.InitializeSyncUseCase
 import com.ahmedadeltito.chatapp.domain.usecase.ObserveMessagesUseCase

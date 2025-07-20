@@ -1,4 +1,4 @@
-package com.ahmedadeltito.chatapp.data.sync
+package com.ahmedadeltito.chatapp.sync
 
 import androidx.lifecycle.asFlow
 import androidx.work.Constraints

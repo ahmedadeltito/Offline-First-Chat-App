@@ -1,4 +1,4 @@
-package com.ahmedadeltito.chatapp.data.sync
+package com.ahmedadeltito.chatapp.sync
 
 import kotlinx.coroutines.flow.Flow
 import com.ahmedadeltito.chatapp.domain.Message

@@ -2,8 +2,8 @@ package com.ahmedadeltito.chatapp.di
 
 import android.content.Context
 import androidx.work.WorkManager
-import com.ahmedadeltito.chatapp.data.sync.SyncManager
-import com.ahmedadeltito.chatapp.data.sync.SyncManagerImpl
+import com.ahmedadeltito.chatapp.sync.SyncManager
+import com.ahmedadeltito.chatapp.sync.SyncManagerImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

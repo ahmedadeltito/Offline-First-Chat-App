@@ -1,4 +1,4 @@
-package com.ahmedadeltito.chatapp.data.sync
+package com.ahmedadeltito.chatapp.sync
 
 import android.content.Context
 import androidx.work.ListenableWorker

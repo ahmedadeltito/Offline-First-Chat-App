@@ -117,7 +117,6 @@ class ChatViewModel @Inject constructor(
     }
 
     // --- Event Handler (UDF Pattern) ---
-    
     fun onEvent(event: ChatUiEvent) {
         when (event) {
             is ChatUiEvent.InputChanged -> handleInputChanged(event.newInput)

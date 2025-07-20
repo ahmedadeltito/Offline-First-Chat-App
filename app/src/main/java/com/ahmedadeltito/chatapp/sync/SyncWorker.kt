@@ -1,10 +1,9 @@
-package com.ahmedadeltito.chatapp.data.sync
+package com.ahmedadeltito.chatapp.sync
 
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ahmedadeltito.chatapp.domain.ChatRepository
-import com.ahmedadeltito.chatapp.domain.Message
 import com.ahmedadeltito.chatapp.domain.MessageStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -78,10 +77,6 @@ class SyncWorker(
         }
     }
     
-    /**
-     * Performs incoming sync with conflict resolution.
-     * This method handles the complex scenario of merging local and remote messages.
-     */
     private suspend fun performIncomingSyncWithConflictResolution() {
         println("SyncWorker: Starting incoming sync with conflict resolution...")
         
